@@ -15,7 +15,10 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:4200",
-                   "https://5d82-2a02-8388-6681-ba00-b49f-5e11-3ec1-7837.ngrok-free.app"],
+                   "https://5d82-2a02-8388-6681-ba00-b49f-5e11-3ec1-7837.ngrok-free.app",
+                   "https://kniffelswiss16.web.app",
+                   "https://kniffelswiss16.firebaseapp.com",
+                   ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
