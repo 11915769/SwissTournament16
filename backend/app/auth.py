@@ -1,45 +1,24 @@
 import os, json
 import firebase_admin
-from firebase_admin import auth as fb_auth, credentials
-from fastapi import Header, HTTPException
+from firebase_admin import credentials
 
 _initialized = False
 
 def init_firebase():
     global _initialized
-    if _initialized:
+    if _initialized or firebase_admin._apps:
+        _initialized = True
         return
 
-    # 1) Preferred: full JSON stored in env var (Railway-friendly)
-    sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+    sa_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
     if sa_json:
-        data = json.loads(sa_json)
-        cred = credentials.Certificate(data)  # dict is allowed
+        cred = credentials.Certificate(json.loads(sa_json))
         firebase_admin.initialize_app(cred)
         _initialized = True
         return
 
-    # 2) Fallback: file path
-    path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH")
+    path = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH")
     if not path:
         raise RuntimeError("Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH")
-    cred = credentials.Certificate(path)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(credentials.Certificate(path))
     _initialized = True
-
-async def get_current_user(authorization: str | None = Header(default=None)):
-    init_firebase()
-
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing Bearer token")
-
-    token = authorization.split(" ", 1)[1].strip()
-    try:
-        decoded = fb_auth.verify_id_token(token)
-        return {
-            "uid": decoded["uid"],
-            "email": decoded.get("email"),
-            "name": decoded.get("name"),
-        }
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")

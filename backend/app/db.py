@@ -1,7 +1,6 @@
 import os
 from google.cloud import firestore
-
-from .auth import init_firebase  # add this import
+from app.auth import init_firebase  # adjust import if needed
 
 _db = None
 
@@ -10,14 +9,22 @@ def get_db():
     if _db:
         return _db
 
-    # If emulator is running
+    # Emulator
     if os.getenv("FIRESTORE_EMULATOR_HOST"):
         print("Using Firestore Emulator")
-        _db = firestore.Client(project="kniffelswiss16")
+        _db = firestore.Client(project=os.getenv("GOOGLE_CLOUD_PROJECT", "kniffelswiss16"))
         return _db
 
-    # Production Firebase: init app (supports JSON or PATH via auth.py)
+    # Production
     init_firebase()
 
-    _db = firestore.Client()
+    project = (
+        os.getenv("GOOGLE_CLOUD_PROJECT")
+        or os.getenv("GCP_PROJECT")
+        or os.getenv("FIREBASE_PROJECT_ID")
+    )
+    if not project:
+        raise RuntimeError("Set GOOGLE_CLOUD_PROJECT (your GCP/Firebase project id)")
+
+    _db = firestore.Client(project=project)
     return _db
