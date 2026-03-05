@@ -8,7 +8,9 @@ from app.routers.swiss_admin import router as swiss_admin_router
 from app.routers.bracket_admin import router as bracket_admin_router
 from app.routers.bracket_public import router as bracket_public_router
 from dotenv import load_dotenv
-load_dotenv()
+
+if not os.getenv("RAILWAY_ENVIRONMENT"):
+    load_dotenv()
 
 app = FastAPI()
 
