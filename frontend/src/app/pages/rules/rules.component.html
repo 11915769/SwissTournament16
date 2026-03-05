@@ -1,0 +1,90 @@
+<section class="rules">
+  <header class="rules__header">
+    <h3 class="rules__title">Regeln</h3>
+    <p class="rules__subtitle">Turnierformat &amp; Kniffel-Sonderregeln</p>
+  </header>
+
+  <div class="rules__grid">
+    <div class="rules__card">
+      <h4 class="rules__cardTitle">Turnierformat</h4>
+      <ul class="rules__list">
+        <li><b>16 Spieler</b></li>
+        <li><b>Swiss System:</b> 5 Runden</li>
+        <li><b>Ausscheiden:</b> Bei <b>3 Niederlagen</b> ausgeschieden (keine weiteren Swiss-Matches)</li>
+        <li><b>Top 8 nach Swiss:</b> Single-Elimination-KO-Bracket</li>
+        <li><b>Finale:</b> Bo3</li>
+      </ul>
+    </div>
+
+    <div class="rules__card">
+      <h4 class="rules__cardTitle">Kniffel-Regeln</h4>
+      <ul class="rules__list">
+        <li>
+          <b>Serviert:</b> <b>+5 Punkte</b>, wenn erzielt bei
+          <b>kleiner Straße</b>, <b>großer Straße</b>, <b>Full House</b> oder <b>Kniffel</b>.
+        </li>
+        <li>
+          <b>Versehentlich umgeworfener Würfel:</b> Darf in die ursprüngliche Lage
+          <b>zurückgedreht</b> werden.
+        </li>
+        <li>
+          <b>Kniffel-Wertung:</b> <b>50 Punkte</b> <i>plus</i> die <b>Augenzahl</b> des gewürfelten Kniffels
+          (also <b>+1</b>, <b>+2</b>, <b>+3</b>, <b>+4</b>, <b>+5</b> oder <b>+6</b>).
+        </li>
+        <li>
+          <b>Mehrfach-Kniffel:</b> Zählt <b>nicht</b> extra. Muss dann normal als <b>Zahl</b> oder als
+          <b>Pasch</b> eingetragen werden.
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div style="padding: 10px"></div>
+  <div class="rules__card">
+      <h4 class="rules__cardTitle">Trinkregeln</h4>
+      <ul class="rules__list">
+        <li><b>Kniffel serviert: TRICHTER</b></li>
+        <li><b>Kniffel:</b> Shot</li>
+        <li><b>Große Straße serviert:</b> Shot</li>
+        <li><b>Full House, kleine Straße serviert:</b>Schluck vom eigenen Getränk</li>
+        <li><b>Match verloren:</b> Shot</li>
+      </ul>
+    </div>
+</section>
+
+<style>
+  .rules { margin-top: 12px; }
+  .rules__header { margin-bottom: 10px; }
+  .rules__title { margin: 0; font-size: 1.25rem; }
+  .rules__subtitle { margin: 4px 0 0; opacity: .75; }
+
+  .rules__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+    gap: 12px;
+  }
+
+  .rules__card {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(255,255,255,.03);
+  }
+
+  .rules__cardTitle {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    letter-spacing: .2px;
+  }
+
+  .rules__list {
+    margin: 0;
+    padding-left: 18px;
+    line-height: 1.5;
+  }
+
+  .rules__list li { margin: 8px 0; }
+
+  @media (max-width: 900px) {
+    .rules__grid { grid-template-columns: 1fr; }
+  }
+</style>

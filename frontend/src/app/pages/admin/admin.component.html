@@ -1,0 +1,202 @@
+<div style="max-width: 1000px; margin: auto;">
+
+  <h2>Admin Panel</h2>
+
+  <p *ngIf="error" style="color:#b00020">{{ error }}</p>
+  <p *ngIf="loading">Loading...</p>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center;">
+
+    <button (click)="createTournament()" [disabled]="loading">
+      Create Tournament
+    </button>
+
+    <button (click)="startSwiss()" [disabled]="loading">
+      Start Swiss
+    </button>
+
+    <button (click)="nextRound()" [disabled]="loading">
+      Next Swiss Round
+    </button>
+
+    <button (click)="createTop8()" [disabled]="loading">
+      Create Top 8 Bracket
+    </button>
+
+    <button (click)="advanceBracket()" [disabled]="loading">
+      Advance Bracket
+    </button>
+
+    <button (click)="refreshState()" [disabled]="loading">
+      Reload State
+    </button>
+
+    <span style="flex:1 1 auto;"></span>
+
+
+    <h3 style="margin: 18px 0 0; width:100%;">Danger Zone</h3>
+    <p style="font-size:14px; opacity:.85; margin: 0; width:100%;">
+      This deletes tournament, players, and matches. Type <b>DELETE</b> to confirm.
+    </p>
+    <input [(ngModel)]="confirmText" placeholder="Type DELETE" style="margin-right:8px;">
+    <button (click)="deleteTournament()" [disabled]="loading">Delete Tournament</button>
+    <button (click)="resetTournament()" [disabled]="loading">Reset Tournament</button>
+  </div>
+
+  <div *ngIf="state">
+
+    <h3>Tournament</h3>
+
+    <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:14px;">
+      <div><b>Status:</b> {{ state.tournament?.status }}</div>
+      <div><b>Round:</b> {{ state.tournament?.currentRound }}</div>
+      <div><b>Players:</b> {{ state.playerCount }}</div>
+    </div>
+
+    <h3 style="margin-top:20px;">
+      Matches
+      <span style="font-size:13px; opacity:.7; font-weight:400;">
+        (Swiss shows current round; Top8 shows bracket. Completed matches stay visible unless hidden.)
+      </span>
+    </h3>
+
+    <table style="width:100%; border-collapse: collapse; font-size:14px;">
+
+      <thead>
+        <tr>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Match</th>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Stage</th>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Player 1</th>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Player 2</th>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Series</th>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Winner</th>
+          <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Admin</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr
+          *ngFor="let m of (state.currentMatches ?? [])"
+        >
+
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+            {{ (m.code ?? m.id)?.slice(0,8) }}
+          </td>
+
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+            <span style="display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid rgba(0,0,0,.08); font-size:12px; opacity:.9;">
+              {{ m.stage ?? 'swiss' }}
+              <span *ngIf="m.stage === 'bracket' && (m.bestOf ?? 3) === 5"> • Final</span>
+            </span>
+          </td>
+
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+            {{ uidToName(m.p1Uid) }}
+          </td>
+
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+            {{ uidToName(m.p2Uid) }}
+          </td>
+
+          <!-- SERIES / SCORE (only for bracket) -->
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+            <ng-container *ngIf="m.stage === 'bracket'; else noSeries">
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <ng-container *ngIf="m.stage === 'bracket'; else noSeries">
+                  <span style="opacity:.85;"><b>BO{{ m.bestOf ?? 1 }}</b></span>
+                </ng-container>
+              </div>
+            </ng-container>
+
+            <ng-template #noSeries>
+              <span style="opacity:.6;">—</span>
+            </ng-template>
+          </td>
+
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+            <span *ngIf="m.winnerUid; else pending">
+              {{ uidToName(m.winnerUid) }}
+            </span>
+            <ng-template #pending><i>pending</i></ng-template>
+          </td>
+
+          <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+
+            <select #sel [disabled]="loading">
+              <option [value]="m.p1Uid">{{ uidToName(m.p1Uid) }}</option>
+              <option [value]="m.p2Uid">{{ uidToName(m.p2Uid) }}</option>
+            </select>
+
+            <button
+              (click)="setWinnerAny(m, sel.value)"
+              [disabled]="loading"
+              style="margin-left:6px;"
+            >
+              Set Winner
+            </button>
+
+            <button
+              (click)="clearWinnerAny(m)"
+              [disabled]="loading"
+              style="margin-left:6px;"
+            >
+              Clear
+            </button>
+
+            <span *ngIf="m.stage === 'bracket'" style="margin-left:10px; font-size:12px; opacity:.7;">
+            </span>
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <h3 style="margin-top:20px;">Players</h3>
+
+  <table style="width:100%; border-collapse: collapse; font-size:14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Name</th>
+        <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Email</th>
+        <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">UID</th>
+        <th style="text-align:left;border-bottom:1px solid #ddd;padding:6px;">Admin</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let p of (state?.players ?? [])">
+        <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+          {{ p.name ?? p.email ?? (p.uid?.slice(0,8)) }}
+        </td>
+
+        <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+          {{ p.email ?? '' }}
+        </td>
+
+        <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+          {{ p.uid?.slice(0,8) }}
+        </td>
+
+        <td style="border-bottom:1px solid #f0f0f0;padding:6px;">
+          <button
+            (click)="removePlayer(p.uid)"
+            [disabled]="loading || state.tournament?.status !== 'registration'"
+          >
+            Remove
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p style="font-size:13px;opacity:.75;margin-top:8px;">
+    Players can only be removed during registration.
+  </p>
+
+</div>

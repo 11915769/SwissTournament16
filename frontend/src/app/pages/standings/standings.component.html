@@ -1,0 +1,54 @@
+<div class="container fade-in" *ngIf="state$ | async as state">
+  <div class="hero">
+    <div>
+      <h1 class="h-title">Leaderboard</h1>
+      <p class="h-sub">Swiss standings updated live.</p>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <div class="badge-row">
+      <div class="badge"><span>🟣</span><b>Status:</b> {{ state.tournament?.status }}</div>
+      <div class="badge"><span>🎯</span><b>Round:</b> {{ state.tournament?.currentRound }}</div>
+      <div class="badge"><span>👥</span><b>Players:</b> {{ state.playerCount }} / {{ state.tournament?.playersMax }}</div>
+    </div>
+  </div>
+
+  <div style="height: 14px;"></div>
+
+  <div class="card card-pad table-wrap" *ngIf="standings$ | async as res">
+    <table class="table">
+      <thead class="thead">
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th style="text-align:right;">W</th>
+          <th style="text-align:right;">L</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr class="trow" *ngFor="let s of res.standings; let i = index">
+          <td>{{ i + 1 }}</td>
+
+          <td>
+            <div class="player">
+              <div>
+                <div class="p-name">{{ s.name || s.email || s.uid }}</div>
+              </div>
+            </div>
+          </td>
+
+          <td style="text-align:right;">
+            <span class="pill good">{{ s.wins }}</span>
+          </td>
+
+          <td style="text-align:right;">
+            <span class="pill bad">{{ s.losses }}</span>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

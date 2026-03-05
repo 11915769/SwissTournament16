@@ -1,0 +1,22 @@
+<div class="auth-wrap fade-in">
+  <div class="card card-pad auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">Login</h1>
+      <p class="auth-sub">Seavas!</p>
+    </div>
+
+    <div class="auth-form">
+      <input class="input" placeholder="name" [(ngModel)]="username" />
+      <input class="input" placeholder="password" type="password" [(ngModel)]="password" />
+      <input class="input" placeholder="repeat password (register)" type="password" [(ngModel)]="confirmPassword" />
+
+      <div class="auth-actions">
+        <button class="btn-secondary" (click)="register()">Register</button>
+        <button class="btn" (click)="login()">Login</button>
+      </div>
+
+      <div class="err" *ngIf="error">{{ error }}</div>
+      <div class="notice" *ngIf="loading">Signing in…</div>
+    </div>
+  </div>
+</div>

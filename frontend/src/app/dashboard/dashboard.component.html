@@ -1,0 +1,272 @@
+<div style="max-width: 860px; margin: 24px auto; padding: 16px; font-family: system-ui;">
+  <h1>Kniffel Swiss 16</h1>
+
+  <p *ngIf="error" style="color: #b00020; white-space: pre-wrap;">{{ error }}</p>
+  <p *ngIf="loading">Loading…</p>
+
+  <!-- Auth block -->
+  <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+    <div style="flex: 1; min-width: 280px; border:1px solid #ddd; border-radius:10px; padding:12px;">
+      <h3>Login</h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <input [(ngModel)]="email" placeholder="email" autocomplete="username" />
+        <input [(ngModel)]="password" type="password" placeholder="password" autocomplete="current-password" />
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button (click)="register()" [disabled]="loading">Register</button>
+          <button (click)="login()" [disabled]="loading">Login</button>
+          <button (click)="logout()" [disabled]="loading">Logout</button>
+          <button (click)="loadMe()" [disabled]="loading || !auth.isLoggedIn()">Load /me</button>
+        </div>
+
+        <div *ngIf="auth.isLoggedIn()" style="font-size: 14px; opacity: .9;">
+          Logged in as: <b>{{ auth.getEmail() }}</b>
+          <span *ngIf="admin.isAdmin()"> (admin)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="flex: 1; min-width: 280px; border:1px solid #ddd; border-radius:10px; padding:12px;">
+      <h3>Tournament</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button (click)="createTournament()" [disabled]="loading || !auth.isLoggedIn() || !admin.isAdmin()">
+          Admin: Create Tournament
+        </button>
+        <button (click)="joinTournament()" [disabled]="loading || !auth.isLoggedIn()">
+          Join Tournament
+        </button>
+        <button (click)="loadState()" [disabled]="loading || !auth.isLoggedIn()">
+          Load State
+        </button>
+      </div>
+
+      <div *ngIf="state" style="margin-top: 12px;">
+        <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:14px;">
+          <div><b>Status:</b> {{ state.tournament?.status }}</div>
+          <div><b>Players:</b> {{ state.playerCount }} / {{ state.tournament?.playersMax }}</div>
+          <div><b>Swiss rounds:</b> {{ state.tournament?.swissRounds }}</div>
+        </div>
+
+        <h4 style="margin: 12px 0 6px;">Players</h4>
+        <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+          <thead>
+            <tr>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">#</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Email</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">UID</th>
+              <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of state.players; let i = index">
+              <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ i + 1 }}</td>
+              <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ p.email }}</td>
+              <td style="border-bottom:1px solid #f0f0f0; padding:6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
+                {{ p.uid }}
+              </td>
+              <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ p.joinedAt }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px;">
+    <h3>Debug</h3>
+    <pre *ngIf="me">{{ me | json }}</pre>
+  </div>
+</div>
+
+<div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+  <button (click)="startSwiss()" [disabled]="loading || !auth.isLoggedIn() || !admin.isAdmin()">
+    Admin: Start Swiss (Round 1)
+  </button>
+  <button (click)="nextRound()" [disabled]="loading || !auth.isLoggedIn() || !admin.isAdmin()">
+    Admin: Next Round
+  </button>
+  <button (click)="loadStandings()" [disabled]="loading || !auth.isLoggedIn()">
+    Load Standings
+  </button>
+</div>
+
+<div style="margin-top: 18px; border-top: 1px solid #eee; padding-top: 12px;">
+  <h3>Top 8 Bracket</h3>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button (click)="loadBracket()" [disabled]="loading || !auth.isLoggedIn()">
+      Load Bracket
+    </button>
+
+    <button (click)="createTop8()" [disabled]="loading || !auth.isLoggedIn() || !admin.isAdmin()">
+      Admin: Create Top 8 Bracket
+    </button>
+
+    <button (click)="advanceBracket()" [disabled]="loading || !auth.isLoggedIn() || !admin.isAdmin()">
+      Admin: Advance Bracket
+    </button>
+  </div>
+</div>
+
+<div *ngIf="state?.currentMatches?.length" style="margin-top: 12px;">
+  <h4>Current Round Matches</h4>
+
+  <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Match</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 1</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 2</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Winner</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;" *ngIf="admin.isAdmin()">Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let m of state?.currentMatches ?? []">
+  <td style="border-bottom:1px solid #f0f0f0; padding:6px; font-family: ui-monospace, Menlo, monospace;">
+          {{ m.id.slice(0, 8) }}
+        </td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p1Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p2Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">
+          <span *ngIf="m.winnerUid; else pending">{{ uidToEmail(m.winnerUid) }}</span>
+          <ng-template #pending><i>pending</i></ng-template>
+        </td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;" *ngIf="admin.isAdmin()">
+          <select #sel>
+            <option [value]="m.p1Uid">{{ uidToEmail(m.p1Uid) }}</option>
+            <option [value]="m.p2Uid">{{ uidToEmail(m.p2Uid) }}</option>
+          </select>
+          <button (click)="setWinner(m.id, sel.value)" [disabled]="loading">Set winner</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div *ngIf="standings?.length" style="margin-top: 12px;">
+  <h4>Standings</h4>
+  <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">#</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">W</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">L</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Buchholz</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of standings; let i = index">
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ i + 1 }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ s.email ?? s.uid }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ s.wins }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ s.losses }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ s.buchholz }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div *ngIf="(bracketData?.QF?.length ?? 0) > 0" style="margin-top: 10px;">
+  <h4>Quarterfinals</h4>
+
+  <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Code</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 1</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 2</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Winner</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;" *ngIf="admin.isAdmin()">Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let m of (bracketData?.QF ?? [])">
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ m.code }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p1Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p2Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">
+          <span *ngIf="m.winnerUid; else qfPending">{{ uidToEmail(m.winnerUid) }}</span>
+          <ng-template #qfPending><i>pending</i></ng-template>
+        </td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;" *ngIf="admin.isAdmin()">
+          <select #qfSel>
+            <option [value]="m.p1Uid">{{ uidToEmail(m.p1Uid) }}</option>
+            <option [value]="m.p2Uid">{{ uidToEmail(m.p2Uid) }}</option>
+          </select>
+          <button (click)="setBracketWinner(m.id, qfSel.value)" [disabled]="loading">Set winner</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div *ngIf="(bracketData?.SF?.length ?? 0) > 0" style="margin-top: 10px;">
+  <h4>Semifinals</h4>
+
+  <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Code</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 1</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 2</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Winner</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;" *ngIf="admin.isAdmin()">Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let m of (bracketData?.SF ?? [])">
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ m.code }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p1Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p2Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">
+          <span *ngIf="m.winnerUid; else sfPending">{{ uidToEmail(m.winnerUid) }}</span>
+          <ng-template #sfPending><i>pending</i></ng-template>
+        </td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;" *ngIf="admin.isAdmin()">
+          <select #sfSel>
+            <option [value]="m.p1Uid">{{ uidToEmail(m.p1Uid) }}</option>
+            <option [value]="m.p2Uid">{{ uidToEmail(m.p2Uid) }}</option>
+          </select>
+          <button (click)="setBracketWinner(m.id, sfSel.value)" [disabled]="loading">Set winner</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div *ngIf="(bracketData?.F?.length ?? 0) > 0" style="margin-top: 10px;">
+  <h4>Final</h4>
+
+  <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Code</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 1</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Player 2</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;">Winner</th>
+        <th style="text-align:left; border-bottom:1px solid #ddd; padding:6px;" *ngIf="admin.isAdmin()">Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let m of (bracketData?.F ?? [])">
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ m.code }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p1Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">{{ uidToEmail(m.p2Uid) }}</td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;">
+          <span *ngIf="m.winnerUid; else fPending">{{ uidToEmail(m.winnerUid) }}</span>
+          <ng-template #fPending><i>pending</i></ng-template>
+        </td>
+        <td style="border-bottom:1px solid #f0f0f0; padding:6px;" *ngIf="admin.isAdmin()">
+          <select #fSel>
+            <option [value]="m.p1Uid">{{ uidToEmail(m.p1Uid) }}</option>
+            <option [value]="m.p2Uid">{{ uidToEmail(m.p2Uid) }}</option>
+          </select>
+          <button (click)="setBracketWinner(m.id, fSel.value)" [disabled]="loading">Set winner</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

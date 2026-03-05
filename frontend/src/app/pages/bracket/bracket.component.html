@@ -1,0 +1,238 @@
+<ng-container *ngIf="state$ | async as s">
+  <div class="container fade-in">
+    <div class="hero">
+      <div>
+        <h1 class="h-title">Bracket</h1>
+        <p class="h-sub">Top 8 single-elim bracket.</p>
+      </div>
+    </div>
+
+    <div class="card card-pad">
+      <div class="badge-row">
+        <div class="badge"><span>🟣</span><b>Status:</b> {{ s.tournament?.status }}</div>
+        <div class="badge"><span>🎯</span><b>Round:</b> {{ s.tournament?.currentRound }}</div>
+        <div class="badge"><span>👥</span><b>Players:</b> {{ s.playerCount }} / {{ s.tournament?.playersMax }}</div>
+      </div>
+    </div>
+
+    <div style="height: 14px;"></div>
+
+    <!-- NOT IN BRACKET PHASE YET -->
+    <div class="card card-pad" *ngIf="!isBracketPhase(s)">
+      <h3 style="margin: 0 0 6px;">Bracket not started yet</h3>
+      <p style="margin: 0; opacity: .85;">
+        The bracket will appear once the tournament enters the <b>top8</b> phase.
+      </p>
+    </div>
+
+    <!-- BRACKET PHASE -->
+    <ng-container *ngIf="isBracketPhase(s)">
+      <ng-container *ngIf="bracket$ | async as b; else loadingBracket">
+        <div class="card card-pad">
+          <h3 style="margin: 0 0 12px;">Top 8 Bracket</h3>
+
+          <div class="bracket">
+            <!-- Quarterfinals -->
+            <div class="col">
+              <div class="colTitle">Quarterfinals </div>
+
+              <div *ngFor="let m of b.QF" class="match">
+                <div class="matchTop">
+                  <div class="matchCode">{{ m.code }}</div>
+                </div>
+
+                <div class="slot" [class.win]="m.winnerUid === m.p1Uid">{{ playerLabel(s, m.p1Uid) }}</div>
+                <div class="slot" [class.win]="m.winnerUid === m.p2Uid">{{ playerLabel(s, m.p2Uid) }}</div>
+
+                <div class="winner">Winner: {{ winnerLabel(s, m) }}</div>
+              </div>
+            </div>
+
+            <!-- Semifinals -->
+              <div class="col">
+                <div class="colTitle">Semifinals</div>
+
+                <ng-container *ngIf="b.SF?.length; else sfPlaceholder">
+                  <div *ngFor="let m of b.SF" class="match">
+                    <div class="matchTop">
+                      <div class="matchCode">{{ m.code }}</div>
+                    </div>
+
+                    <div class="slot" [class.win]="m.winnerUid === m.p1Uid">
+                      {{ playerLabel(s, m.p1Uid) }}
+                    </div>
+                    <div class="slot" [class.win]="m.winnerUid === m.p2Uid">
+                      {{ playerLabel(s, m.p2Uid) }}
+                    </div>
+
+                    <div class="winner">Winner: {{ winnerLabel(s, m) }}</div>
+                  </div>
+                </ng-container>
+
+                <ng-template #sfPlaceholder>
+                  <div class="match">
+                    <div class="matchCode">SF1</div>
+                    <div class="slot">Winner QF1</div>
+                    <div class="slot">Winner QF2</div>
+                  </div>
+
+                  <div class="match">
+                    <div class="matchCode">SF2</div>
+                    <div class="slot">Winner QF3</div>
+                    <div class="slot">Winner QF4</div>
+                  </div>
+                </ng-template>
+              </div>
+
+            <!-- Final -->
+              <div class="col">
+                <div class="colTitle">Final</div>
+
+                <ng-container *ngIf="b.F?.length; else finalPlaceholder">
+                  <div *ngFor="let m of b.F" class="match final">
+                    <div class="matchTop">
+                      <div class="matchCode">{{ m.code }}</div>
+                    </div>
+
+                    <div class="slot" [class.win]="m.winnerUid === m.p1Uid">
+                      {{ playerLabel(s, m.p1Uid) }}
+                    </div>
+                    <div class="slot" [class.win]="m.winnerUid === m.p2Uid">
+                      {{ playerLabel(s, m.p2Uid) }}
+                    </div>
+
+                    <div class="winner">Champion: {{ winnerLabel(s, m) }}</div>
+                  </div>
+                </ng-container>
+
+                <ng-template #finalPlaceholder>
+                  <div class="match final">
+                    <div class="matchCode">F</div>
+                    <div class="slot">Winner SF1</div>
+                    <div class="slot">Winner SF2</div>
+                  </div>
+                </ng-template>
+              </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #loadingBracket>
+        <div class="card card-pad">
+          <h3 style="margin: 0 0 6px;">Loading bracket…</h3>
+          <p style="margin: 0; opacity: .85;">Waiting for bracket data.</p>
+        </div>
+      </ng-template>
+    </ng-container>
+  </div>
+</ng-container>
+
+<style>
+  .bracket {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: 14px;
+    align-items: start;
+  }
+
+  .colTitle {
+    font-weight: 800;
+    margin-bottom: 10px;
+    opacity: .95;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .boTag {
+    font-size: 11px;
+    font-weight: 700;
+    opacity: .8;
+    border: 1px solid rgba(255,255,255,.18);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .match {
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 14px;
+    padding: 10px;
+    margin-bottom: 12px;
+    background: rgba(255,255,255,.02);
+  }
+
+  .matchTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .matchCode {
+    font-size: 12px;
+    opacity: .7;
+  }
+
+  .scorePill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    opacity: .95;
+    border: 1px solid rgba(0,0,0,.08);
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.02);
+    white-space: nowrap;
+  }
+
+  .boPill {
+    font-weight: 800;
+    opacity: .85;
+  }
+
+  .score {
+    font-weight: 900;
+    letter-spacing: .2px;
+  }
+
+  .toWin {
+    opacity: .65;
+  }
+
+  .slot {
+    padding: 8px 10px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    border: 1px solid rgba(0,0,0,.06);
+    background: rgba(0,0,0,.02);
+    font-weight: 700;
+  }
+
+  .slot.win {
+    border-color: rgba(0, 128, 0, .25);
+    background: rgba(0, 128, 0, .07);
+  }
+
+  .winner {
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: .8;
+  }
+
+  /* Make columns stack and allow vertical spacing */
+  .col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Push Semifinals column downward */
+  .bracket .col:nth-child(2) {
+    margin-top: 51%;
+  }
+
+  .bracket .col:nth-child(3) {
+    margin-top: 78%;
+  }
+</style>
