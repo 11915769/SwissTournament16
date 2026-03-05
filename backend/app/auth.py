@@ -1,5 +1,4 @@
-import json
-import os
+import os, json
 import firebase_admin
 from firebase_admin import auth as fb_auth, credentials
 from fastapi import Header, HTTPException
@@ -11,16 +10,16 @@ def init_firebase():
     if _initialized:
         return
 
-    # Option 1: JSON in env (recommended for Railway)
+    # 1) Preferred: full JSON stored in env var (Railway-friendly)
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
     if sa_json:
         data = json.loads(sa_json)
-        cred = credentials.Certificate(data)  # accepts dict
+        cred = credentials.Certificate(data)  # dict is allowed
         firebase_admin.initialize_app(cred)
         _initialized = True
         return
 
-    # Option 2: file path (useful for local Docker with a mounted file)
+    # 2) Fallback: file path
     path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_PATH")
     if not path:
         raise RuntimeError("Set FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH")
